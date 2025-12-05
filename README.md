@@ -1,0 +1,1 @@
+To setup auth on applications using a scalable microservice
