@@ -23,7 +23,7 @@ func NewRouter(
 
 	// Initialize security components
 	jwtService := security.NewJWTService(cfg.JWTSecret)
-	
+
 	// Initialize OAuth components (handles Google OAuth provider interaction)
 	authCodeService := oauth.NewAuthCodeService()
 	tokenService := oauth.NewTokenService(cfg, jwtService, tokenRepo)
@@ -54,16 +54,16 @@ func NewRouter(
 	// OAuth 2.0 endpoints - API input layer
 	// /authorize - Initiates OAuth flow, redirects to Google
 	mux.HandleFunc("/authorize", authorizeHandler.Handle)
-	
+
 	// /callback - Receives authorization code from Google (Google OAuth provider interaction)
 	mux.HandleFunc("/callback", authorizeHandler.HandleCallback)
-	
+
 	// /token - Exchanges authorization code for JWT tokens (output to DB via tokenRepo)
 	mux.HandleFunc("/token", tokenHandler.Handle)
-	
+
 	// /userinfo - Returns user information from JWT token (input from API, output from DB)
 	mux.HandleFunc("/userinfo", userinfoHandler.Handle)
-	
+
 	// /introspect - Validates tokens for other microservices
 	mux.HandleFunc("/introspect", introspectHandler.Handle)
 

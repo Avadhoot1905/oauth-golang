@@ -44,10 +44,10 @@ func NewAuthCodeService() *AuthCodeService {
 		sessions:  make(map[string]*AuthSession),
 		authCodes: make(map[string]*AuthCode),
 	}
-	
+
 	// Start cleanup goroutine for expired codes
 	go service.cleanupExpired()
-	
+
 	return service
 }
 

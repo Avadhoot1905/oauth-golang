@@ -26,7 +26,7 @@ func NewUserInfoHandler(jwtService *security.JWTService, userRepo *storage.UserR
 // UserInfoResponse represents the user information response
 // API OUTPUT: User information returned to client
 type UserInfoResponse struct {
-	Sub           string `json:"sub"`            // Subject (user ID)
+	Sub           string `json:"sub"` // Subject (user ID)
 	Email         string `json:"email"`
 	EmailVerified bool   `json:"email_verified"`
 	Name          string `json:"name"`

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"oauth-golang/pkg/utils"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // TokenClaims represents JWT token claims
