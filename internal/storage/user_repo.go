@@ -8,13 +8,13 @@ import (
 
 // User represents a user in the database
 type User struct {
-	ID            string    `gorm:"primaryKey;type:uuid"`
-	Email         string    `gorm:"uniqueIndex;not null"`
+	ID            string `gorm:"primaryKey;type:uuid"`
+	Email         string `gorm:"uniqueIndex;not null"`
 	EmailVerified bool
 	Name          string
 	GivenName     string
 	FamilyName    string
-	GoogleID      string    `gorm:"uniqueIndex"`
+	GoogleID      string `gorm:"uniqueIndex"`
 	Picture       string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
