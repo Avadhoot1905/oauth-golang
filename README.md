@@ -1,6 +1,6 @@
 # OAuth 2.0 Microservice with Google Authentication
 
-A production-ready OAuth 2.0 authorization server built with Go, implementing Google OAuth integration, JWT token generation, PKCE support, and PostgreSQL persistence.
+A production-ready OAuth 2.0 authorization server built with Go, implementing Google OAuth integration, JWT token generation, PKCE support, and PostgreSQL persistence. For architectural, implementation or startup details, view documentation directory
 
 ## 🚀 Features
 
@@ -508,11 +508,3 @@ curl http://localhost:8080/userinfo \
 - [ ] Add comprehensive error handling
 - [ ] Set up CI/CD pipeline
 - [ ] Perform security audit
-
-## 📝 License
-
-MIT License
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
