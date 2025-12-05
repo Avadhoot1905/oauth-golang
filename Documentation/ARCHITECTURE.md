@@ -42,8 +42,8 @@
 │  │           Data Access Layer (DB OUTPUT/INPUT)                │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │  │
 │  │  │   User   │  │  Client  │  │  Token   │  │   GORM   │      │  │
-│  │  │   Repo   │  │   Repo   │  │   Repo   │  │   ORM    │     │  │
-│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │  │
+│  │  │   Repo   │  │   Repo   │  │   Repo   │  │   ORM    │      │  │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘      │  │
 │  │              (Uses sql.DB)                (Auto-Migration)   │  │
 │  └────────────────────────┬─────────────────────────────────────┘  │
 └───────────────────────────┼──────────────────────────────────────┬─┘
@@ -88,13 +88,13 @@
      │                                  │               │        │
      │                                  └───────────────┼────────┘
      │                                                  │
-┌────▼───────┐                                         │
-│   Google   │  5. User authenticates                  │
-│   OAuth    │     with Google                         │
-└────┬───────┘                                         │
-     │                                                 │
-     │  6. 302 Redirect to callback                    │
-     │     with authorization code                     │
+┌────▼───────┐                                          │
+│   Google   │  5. User authenticates                   │
+│   OAuth    │     with Google                          │
+└────┬───────┘                                          │
+     │                                                  │
+     │  6. 302 Redirect to callback                     │
+     │     with authorization code                      │
      ├─────────────────────────────────────────────────▶
      │                                                 │
      │                         7. Exchange code with   │
