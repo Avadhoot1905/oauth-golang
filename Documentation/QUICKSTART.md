@@ -36,28 +36,56 @@ go build -o bin/oauth-server ./cmd/server/main.go
 
 The server will start on `http://localhost:8080`
 
+**Note:** The database tables (`users`, `oauth_clients`, `refresh_tokens`) will be automatically created on first run using GORM auto-migration. You don't need to run any SQL migrations manually!
+
 ### Step 4: Register a Test Client
 
-Connect to your PostgreSQL database and run:
+Create a test client using GORM. You can either:
+
+**Option A: Add this code to a setup script or run it once:**
+
+```go
+package main
+
+import (
+    "log"
+    "oauth-golang/internal/storage"
+    "time"
+)
+
+func main() {
+    // Initialize database
+    storage.InitDB("postgresql://user:password@localhost:5432/database")
+    
+    // Create test client
+    testClient := storage.OAuthClient{
+        ClientID:     "test-client",
+        ClientSecret: "test-secret",
+        ClientName:   "Test Application",
+        ClientType:   "confidential",
+        RedirectURIs: []string{"http://localhost:3000/callback", "http://localhost:8080/callback"},
+        GrantTypes:   []string{"authorization_code", "refresh_token"},
+        Scope:        "openid email profile",
+        CreatedAt:    time.Now(),
+        UpdatedAt:    time.Now(),
+    }
+    
+    result := storage.DB.Create(&testClient)
+    if result.Error != nil {
+        log.Fatalf("Failed to create test client: %v", result.Error)
+    }
+    
+    log.Println("Test client created successfully!")
+}
+```
+
+**Option B: Use GORM CLI or connect directly via SQL (if preferred):**
 
 ```sql
-INSERT INTO oauth_clients (
-    client_id, 
-    client_secret, 
-    client_name, 
-    client_type, 
-    redirect_uris, 
-    grant_types, 
-    scope
-) VALUES (
-    'test-client',
-    'test-secret',
-    'Test Application',
-    'confidential',
-    ARRAY['http://localhost:3000/callback', 'http://localhost:8080/callback'],
-    ARRAY['authorization_code', 'refresh_token'],
-    'openid email profile'
-);
+INSERT INTO oauth_clients (client_id, client_secret, client_name, client_type, redirect_uris, grant_types, scope, created_at, updated_at)
+VALUES ('test-client', 'test-secret', 'Test Application', 'confidential', 
+        ARRAY['http://localhost:3000/callback', 'http://localhost:8080/callback'], 
+        ARRAY['authorization_code', 'refresh_token'], 'openid email profile', NOW(), NOW());
 ```
 
 ### Step 5: Test the OAuth Flow
@@ -188,10 +216,10 @@ oauth-golang/
 - **`security/keys.go`** - RSA key management
 
 ### Data Access Layer
-- **`storage/user_repo.go`** - User CRUD operations
-- **`storage/client_repo.go`** - Client CRUD operations
-- **`storage/token_repo.go`** - Token storage & revocation
-- **`storage/db.go`** - Database setup & migrations
+- **`storage/user_repo.go`** - User CRUD operations (includes User model with GORM tags)
+- **`storage/client_repo.go`** - Client CRUD operations (includes OAuthClient model with GORM tags)
+- **`storage/token_repo.go`** - Token storage & revocation (includes RefreshToken model with GORM tags)
+- **`storage/db.go`** - Database setup with GORM auto-migration
 
 ## 🎯 Common Use Cases
 
@@ -277,9 +305,10 @@ let params = [
 ## 🐛 Troubleshooting
 
 ### Issue: "Failed to connect to database"
-- Check DATABASE_URL is correct
+- Check DATABASE_URL is correct (format: `postgresql://user:password@host:port/database`)
 - Ensure PostgreSQL is running
 - Verify network connectivity
+- Check that the database exists (GORM will create tables but not the database itself)
 
 ### Issue: "Invalid client_id"
 - Ensure client is registered in oauth_clients table

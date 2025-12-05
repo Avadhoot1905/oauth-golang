@@ -5,7 +5,7 @@
 ### Core Features
 ✅ **Google OAuth 2.0 Integration** - Full authorization code flow with PKCE support  
 ✅ **JWT Token Management** - Access tokens, refresh tokens, and ID tokens  
-✅ **PostgreSQL Database** - Complete schema with migrations  
+✅ **PostgreSQL Database with GORM** - Auto-migration and ORM support  
 ✅ **RESTful API** - All OAuth 2.0 endpoints implemented  
 ✅ **Security** - PKCE, token revocation, secure random generation  
 ✅ **Modular Architecture** - Clean separation of concerns  
@@ -38,10 +38,10 @@
 - `internal/security/keys.go` - RSA key management (for future use)
 
 ### Database Layer (DB Interaction)
-- `internal/storage/db.go` - Database connection and migrations
-- `internal/storage/user_repo.go` - User CRUD operations
-- `internal/storage/client_repo.go` - OAuth client CRUD operations
-- `internal/storage/token_repo.go` - Token storage and revocation
+- `internal/storage/db.go` - GORM database connection with auto-migration
+- `internal/storage/user_repo.go` - User CRUD operations (includes User model with GORM tags)
+- `internal/storage/client_repo.go` - OAuth client CRUD operations (includes OAuthClient model with GORM tags)
+- `internal/storage/token_repo.go` - Token storage and revocation (includes RefreshToken model with GORM tags)
 
 ### User Management
 - `internal/user/auth.go` - User authentication and creation from Google OAuth
@@ -59,11 +59,23 @@
 
 ## 🗄️ Database Schema
 
-### Tables Created (Auto-migration on startup)
+### Tables Created (GORM Auto-migration on startup)
 1. **users** - User accounts with Google OAuth info
+   - Models defined in `user_repo.go` with GORM tags
+   - Primary key: UUID, Unique indexes on email and google_id
 2. **oauth_clients** - OAuth client applications
+   - Models defined in `client_repo.go` with GORM tags
+   - Primary key: client_id, Array types for redirect_uris and grant_types
 3. **refresh_tokens** - Long-lived refresh tokens
+   - Models defined in `token_repo.go` with GORM tags
+   - Primary key: token
 4. **revoked_tokens** - Token blacklist
+
+### GORM Integration
+- **Auto-Migration**: Tables are automatically created/updated on application startup
+- **Type Safety**: Go structs define database schema with struct tags
+- **No Manual SQL**: Schema changes are managed through Go code
+- **PostgreSQL Arrays**: Native support for text[] columns
 
 ## 🔄 Data Flow
 
@@ -122,8 +134,10 @@ Microservice → /introspect (API INPUT)
 
 ### 4. **Database Design**
 - PostgreSQL for relational data
+- GORM ORM for schema management and migrations
 - Array types for redirect_uris and grant_types
-- Indexes on frequently queried columns
+- Indexes on frequently queried columns (defined via GORM tags)
+- Automatic timestamps (created_at, updated_at)
 
 ### 5. **Security Approach**
 - HMAC-SHA256 for JWT signing (symmetric)
@@ -151,7 +165,8 @@ DATABASE_URL             # PostgreSQL connection string
 ### Database Setup
 1. Create PostgreSQL database
 2. Update DATABASE_URL in .env
-3. Migrations run automatically on startup
+3. GORM auto-migration runs on startup (creates/updates tables automatically)
+4. No manual SQL migration scripts needed
 
 ## 🚀 Running the Service
 
@@ -286,7 +301,9 @@ Services coordinate between layers:
 ```
 github.com/golang-jwt/jwt/v5  - JWT token library
 github.com/joho/godotenv      - .env file loader
-github.com/lib/pq             - PostgreSQL driver
+github.com/lib/pq             - PostgreSQL driver (for sql.DB)
+gorm.io/gorm                  - GORM ORM library
+gorm.io/driver/postgres       - GORM PostgreSQL driver
 golang.org/x/crypto/bcrypt    - Password hashing
 ```
 
