@@ -10,7 +10,7 @@ import (
 
 // RefreshToken represents a refresh token in the database
 type RefreshToken struct {
-	Token     string
+	Token     string    `gorm:"primaryKey"`
 	UserID    string
 	ClientID  string
 	Scope     string

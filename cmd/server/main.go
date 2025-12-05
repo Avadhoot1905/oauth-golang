@@ -21,22 +21,20 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Initialize database connection (DB interaction layer)
-	db, err := storage.InitDB(cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-	defer db.Close()
+	// Initialize database connection with GORM (includes auto-migration)
+	storage.InitDB(cfg.DatabaseURL)
 
-	// Run database migrations to set up tables
-	if err := storage.RunMigrations(db); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+	// Get the underlying *sql.DB for repository initialization
+	sqlDB, err := storage.DB.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database instance: %v", err)
 	}
+	defer sqlDB.Close()
 
 	// Initialize repositories (DB interaction layer)
-	userRepo := storage.NewUserRepository(db)
-	clientRepo := storage.NewClientRepository(db)
-	tokenRepo := storage.NewTokenRepository(db)
+	userRepo := storage.NewUserRepository(sqlDB)
+	clientRepo := storage.NewClientRepository(sqlDB)
+	tokenRepo := storage.NewTokenRepository(sqlDB)
 
 	// Initialize HTTP router with all handlers (API input layer)
 	handler := router.NewRouter(cfg, userRepo, clientRepo, tokenRepo)

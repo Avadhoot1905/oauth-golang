@@ -10,12 +10,12 @@ import (
 
 // OAuthClient represents an OAuth client application
 type OAuthClient struct {
-	ClientID     string
+	ClientID     string    `gorm:"primaryKey"`
 	ClientSecret string
 	ClientName   string
-	ClientType   string // "confidential" or "public"
-	RedirectURIs []string
-	GrantTypes   []string
+	ClientType   string    `gorm:"default:'confidential'"` // "confidential" or "public"
+	RedirectURIs []string  `gorm:"type:text[]"`
+	GrantTypes   []string  `gorm:"type:text[]"`
 	Scope        string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time

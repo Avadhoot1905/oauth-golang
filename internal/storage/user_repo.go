@@ -8,14 +8,14 @@ import (
 
 // User represents a user in the database
 type User struct {
-	ID            string
-	Email         string
+	ID            string    `gorm:"primaryKey;type:uuid"`
+	Email         string    `gorm:"uniqueIndex;not null"`
 	EmailVerified bool
 	Name          string
 	GivenName     string
 	FamilyName    string
+	GoogleID      string    `gorm:"uniqueIndex"`
 	Picture       string
-	GoogleID      string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
