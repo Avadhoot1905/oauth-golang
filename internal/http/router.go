@@ -16,7 +16,7 @@ import (
 func NewRouter(
 	cfg *config.Config,
 	userRepo *storage.UserRepository,
-	clientRepo *storage.ClientRepository,
+	storageService *storage.Storage,
 	tokenRepo *storage.TokenRepository,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -27,7 +27,7 @@ func NewRouter(
 	// Initialize OAuth components (handles Google OAuth provider interaction)
 	authCodeService := oauth.NewAuthCodeService()
 	tokenService := oauth.NewTokenService(cfg, jwtService, tokenRepo)
-	clientRegistry := oauth.NewClientRegistry(clientRepo)
+	clientRegistry := oauth.NewClientRegistry(storageService)
 	pkceValidator := oauth.NewPKCEValidator()
 
 	// Initialize user authentication service

@@ -43,7 +43,7 @@ oauth-golang/
 │   ├── storage/
 │   │   ├── db.go                      # Database initialization & migrations
 │   │   ├── user_repo.go               # User repository
-│   │   ├── client_repo.go             # OAuth client repository
+│   │   ├── client_repo.go             # OAuth client repository (GORM-based Storage)
 │   │   └── token_repo.go              # Token repository
 │   └── user/
 │       └── auth.go                    # User authentication logic
@@ -108,11 +108,20 @@ DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
 
 ### 5. Run database migrations
 
-Migrations run automatically on server start, creating these tables:
+Migrations run automatically on server start using GORM, creating these tables:
 - `users` - User accounts
 - `oauth_clients` - OAuth client applications
 - `refresh_tokens` - Refresh token storage
 - `revoked_tokens` - Token blacklist
+
+**Auto-Seeded Development Client:**
+A development OAuth client is automatically created on startup:
+- **Client ID:** `demo-frontend`
+- **Client Secret:** `dev-secret`
+- **Redirect URI:** `http://localhost:3000/callback`
+- **Grant Types:** `authorization_code`, `refresh_token`
+
+You can start testing immediately with this client!
 
 ### 6. Start the server
 
@@ -141,7 +150,8 @@ Initiates OAuth 2.0 authorization flow, redirects user to Google login.
 
 **Example:**
 ```bash
-curl "http://localhost:8080/authorize?client_id=test-client&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state&code_challenge=CHALLENGE&code_challenge_method=S256"
+# Using the auto-seeded demo-frontend client
+curl "http://localhost:8080/authorize?client_id=demo-frontend&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state&code_challenge=CHALLENGE&code_challenge_method=S256"
 ```
 
 **Flow:**
@@ -180,12 +190,14 @@ Exchanges authorization code for access token and refresh token.
 
 **Example:**
 ```bash
+# Using the auto-seeded demo-frontend client
 curl -X POST http://localhost:8080/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=authorization_code" \
   -d "code=AUTHORIZATION_CODE" \
   -d "redirect_uri=http://localhost:3000/callback" \
-  -d "client_id=test-client" \
+  -d "client_id=demo-frontend" \
+  -d "client_secret=dev-secret" \
   -d "code_verifier=VERIFIER"
 ```
 
@@ -318,6 +330,8 @@ curl http://localhost:8080/health
 
 ## 🗄️ Database Schema
 
+**Note:** All tables are automatically created by GORM on startup. No manual SQL needed!
+
 ### Users Table
 ```sql
 CREATE TABLE users (
@@ -340,13 +354,19 @@ CREATE TABLE oauth_clients (
     client_id VARCHAR(255) PRIMARY KEY,
     client_secret VARCHAR(255),
     client_name VARCHAR(255) NOT NULL,
-    client_type VARCHAR(50) NOT NULL, -- 'confidential' or 'public'
-    redirect_uris TEXT[] NOT NULL,
-    grant_types TEXT[] NOT NULL,
+    client_type VARCHAR(50) NOT NULL, -- 'public' or 'confidential'
+    redirect_uris TEXT[] NOT NULL,    -- Uses pq.StringArray in Go
+    grant_types TEXT[] NOT NULL,      -- Uses pq.StringArray in Go
     scope VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Auto-seeded development client:
+-- client_id: 'demo-frontend'
+-- client_secret: 'dev-secret'
+-- client_type: 'public'
+-- redirect_uris: ARRAY['http://localhost:3000/callback']
 ```
 
 ### Refresh Tokens Table
@@ -413,10 +433,10 @@ Client Application
    - **keys.go**: Manage RSA key pairs
 
 4. **Storage** (`internal/storage/`)
-   - **user_repo.go**: User CRUD operations
-   - **client_repo.go**: OAuth client CRUD operations
-   - **token_repo.go**: Token storage and revocation
-   - **db.go**: Database connection and migrations
+   - **user_repo.go**: User CRUD operations (sql.DB-based)
+   - **client_repo.go**: OAuth client operations (GORM-based Storage struct)
+   - **token_repo.go**: Token storage and revocation (sql.DB-based)
+   - **db.go**: Database connection, GORM migrations, and auto-seeding
 
 5. **User Auth** (`internal/user/`)
    - **auth.go**: User authentication and management
@@ -433,7 +453,34 @@ Client Application
 
 ## 🧪 Testing the Service
 
-### 1. Register an OAuth Client (Manual DB Insert)
+### 1. Use Auto-Seeded Client (Recommended)
+
+The server automatically creates a `demo-frontend` client on startup - no manual setup needed!
+
+### 2. Initiate OAuth Flow
+
+Visit in browser (using auto-seeded client):
+```
+http://localhost:8080/authorize?client_id=demo-frontend&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state
+```
+
+### 3. Exchange Code for Tokens
+
+After redirect, extract the `code` parameter and exchange it:
+
+```bash
+curl -X POST http://localhost:8080/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=YOUR_CODE" \
+  -d "redirect_uri=http://localhost:3000/callback" \
+  -d "client_id=demo-frontend" \
+  -d "client_secret=dev-secret"
+```
+
+### (Optional) Register Additional OAuth Clients
+
+If you need additional test clients, use GORM or manual SQL:
 
 ```sql
 INSERT INTO oauth_clients (
@@ -453,27 +500,6 @@ INSERT INTO oauth_clients (
     ARRAY['authorization_code', 'refresh_token'],
     'openid email profile'
 );
-```
-
-### 2. Initiate OAuth Flow
-
-Visit in browser:
-```
-http://localhost:8080/authorize?client_id=test-client&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state
-```
-
-### 3. Exchange Code for Tokens
-
-After redirect, extract the `code` parameter and exchange it:
-
-```bash
-curl -X POST http://localhost:8080/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=authorization_code" \
-  -d "code=YOUR_CODE" \
-  -d "redirect_uri=http://localhost:3000/callback" \
-  -d "client_id=test-client" \
-  -d "client_secret=test-secret"
 ```
 
 ### 4. Get User Info

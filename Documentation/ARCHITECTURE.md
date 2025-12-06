@@ -41,10 +41,11 @@
 │  ┌────────────────────────▼─────────────────────────────────────┐  │
 │  │           Data Access Layer (DB OUTPUT/INPUT)                │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │  │
-│  │  │   User   │  │  Client  │  │  Token   │  │   GORM   │      │  │
-│  │  │   Repo   │  │   Repo   │  │   Repo   │  │   ORM    │      │  │
+│  │  │   User   │  │ Storage  │  │  Token   │  │   GORM   │      │  │
+│  │  │   Repo   │  │ (GORM)   │  │   Repo   │  │   ORM    │      │  │
 │  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘      │  │
-│  │              (Uses sql.DB)                (Auto-Migration)   │  │
+│  │  (sql.DB)     (GORM-based  (sql.DB)      (Auto-Migration)   │  │
+│  │               Client Ops)                                    │  │
 │  └────────────────────────┬─────────────────────────────────────┘  │
 └───────────────────────────┼──────────────────────────────────────┬─┘
                             │                                      │
@@ -58,6 +59,7 @@
               │  │ revoked_tokens    │   │              │                  │
               │  └───────────────────┘   │              └──────────────────┘
               │  (GORM Auto-Migration)   │
+              │  (Dev client auto-seeded)│
               └──────────────────────────┘
 ```
 
@@ -293,6 +295,7 @@ Layer 6: Database Security
 
 ```
 Note: Tables are auto-created by GORM on application startup
+Dev OAuth client (demo-frontend) is automatically seeded
 
 ┌─────────────────────────┐
 │       users             │
@@ -331,13 +334,20 @@ Note: Tables are auto-created by GORM on application startup
 │ client_id (PK)          │  GORM: primaryKey
 │ client_secret           │
 │ client_name             │
-│ client_type             │  GORM: default:'confidential'
-│ redirect_uris (ARRAY)   │  GORM: type:text[]
-│ grant_types (ARRAY)     │  GORM: type:text[]
+│ client_type             │  "public" or "confidential"
+│ redirect_uris           │  pq.StringArray (type:text[])
+│ grant_types             │  pq.StringArray (type:text[])
 │ scope                   │
 │ created_at              │  GORM: autoCreateTime
 │ updated_at              │  GORM: autoUpdateTime
 └─────────────────────────┘
+
+Development Client (auto-seeded):
+- client_id: "demo-frontend"
+- client_secret: "dev-secret"
+- client_type: "public"
+- redirect_uris: ["http://localhost:3000/callback"]
+- grant_types: ["authorization_code", "refresh_token"]
 
 
 ┌─────────────────────────┐

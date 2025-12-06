@@ -36,13 +36,32 @@ go build -o bin/oauth-server ./cmd/server/main.go
 
 The server will start on `http://localhost:8080`
 
-**Note:** The database tables (`users`, `oauth_clients`, `refresh_tokens`) will be automatically created on first run using GORM auto-migration. You don't need to run any SQL migrations manually!
+**Note:** The database tables (`users`, `oauth_clients`, `refresh_tokens`) will be automatically created on first run using GORM auto-migration. A development OAuth client (`demo-frontend`) is automatically seeded for testing!
 
-### Step 4: Register a Test Client
+### Step 4: Use the Auto-Seeded Development Client
 
-Create a test client using GORM. You can either:
+The server automatically creates a development OAuth client on startup:
 
-**Option A: Add this code to a setup script or run it once:**
+```
+Client ID: demo-frontend
+Client Secret: dev-secret
+Client Name: Demo Frontend App
+Client Type: public
+Redirect URIs: ["http://localhost:3000/callback"]
+Grant Types: ["authorization_code", "refresh_token"]
+Scope: openid profile email
+```
+
+You can use this client immediately for testing, or create additional test clients:
+
+#### Option A: Use Auto-Seeded Client (Recommended)
+Just use `client_id=demo-frontend` in your requests!
+
+#### Option B: Register Additional Test Clients
+
+Create additional test clients using GORM. You can either:
+
+**Option 1: Add this code to a setup script or run it once:**
 
 ```go
 package main
@@ -50,24 +69,22 @@ package main
 import (
     "log"
     "oauth-golang/internal/storage"
-    "time"
+    "github.com/lib/pq"
 )
 
 func main() {
-    // Initialize database
+    // Initialize database (also seeds demo-frontend)
     storage.InitDB("postgresql://user:password@localhost:5432/database")
     
-    // Create test client
+    // Create additional test client
     testClient := storage.OAuthClient{
         ClientID:     "test-client",
         ClientSecret: "test-secret",
         ClientName:   "Test Application",
         ClientType:   "confidential",
-        RedirectURIs: []string{"http://localhost:3000/callback", "http://localhost:8080/callback"},
-        GrantTypes:   []string{"authorization_code", "refresh_token"},
+        RedirectURIs: pq.StringArray{"http://localhost:3000/callback", "http://localhost:8080/callback"},
+        GrantTypes:   pq.StringArray{"authorization_code", "refresh_token"},
         Scope:        "openid email profile",
-        CreatedAt:    time.Now(),
-        UpdatedAt:    time.Now(),
     }
     
     result := storage.DB.Create(&testClient)
@@ -79,7 +96,7 @@ func main() {
 }
 ```
 
-**Option B: Use GORM CLI or connect directly via SQL (if preferred):**
+**Option 2: Use GORM CLI or connect directly via SQL (if preferred):**
 
 ```sql
 INSERT INTO oauth_clients (client_id, client_secret, client_name, client_type, redirect_uris, grant_types, scope, created_at, updated_at)
@@ -92,9 +109,9 @@ VALUES ('test-client', 'test-secret', 'Test Application', 'confidential',
 
 #### 5.1 Initiate Authorization
 
-Open in your browser:
+Open in your browser (using the auto-seeded demo-frontend client):
 ```
-http://localhost:8080/authorize?client_id=test-client&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state-123
+http://localhost:8080/authorize?client_id=demo-frontend&redirect_uri=http://localhost:3000/callback&response_type=code&state=random-state-123
 ```
 
 You'll be redirected to Google login. After authentication, you'll receive an authorization code.
@@ -107,8 +124,8 @@ curl -X POST http://localhost:8080/token \
   -d "grant_type=authorization_code" \
   -d "code=YOUR_AUTHORIZATION_CODE" \
   -d "redirect_uri=http://localhost:3000/callback" \
-  -d "client_id=test-client" \
-  -d "client_secret=test-secret"
+  -d "client_id=demo-frontend" \
+  -d "client_secret=dev-secret"
 ```
 
 Response:

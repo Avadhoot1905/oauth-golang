@@ -38,9 +38,9 @@
 - `internal/security/keys.go` - RSA key management (for future use)
 
 ### Database Layer (DB Interaction)
-- `internal/storage/db.go` - GORM database connection with auto-migration
+- `internal/storage/db.go` - GORM database connection with auto-migration + Storage struct + SeedDevClient()
 - `internal/storage/user_repo.go` - User CRUD operations (includes User model with GORM tags)
-- `internal/storage/client_repo.go` - OAuth client CRUD operations (includes OAuthClient model with GORM tags)
+- `internal/storage/client_repo.go` - OAuth client operations with GORM (OAuthClient model + Storage methods)
 - `internal/storage/token_repo.go` - Token storage and revocation (includes RefreshToken model with GORM tags)
 
 ### User Management
@@ -64,8 +64,10 @@
    - Models defined in `user_repo.go` with GORM tags
    - Primary key: UUID, Unique indexes on email and google_id
 2. **oauth_clients** - OAuth client applications
-   - Models defined in `client_repo.go` with GORM tags
-   - Primary key: client_id, Array types for redirect_uris and grant_types
+   - Model defined in `client_repo.go` with GORM tags
+   - Primary key: client_id
+   - Array types: `pq.StringArray` for redirect_uris and grant_types
+   - **Auto-seeded**: Development client "demo-frontend" created on startup
 3. **refresh_tokens** - Long-lived refresh tokens
    - Models defined in `token_repo.go` with GORM tags
    - Primary key: token
@@ -75,14 +77,16 @@
 - **Auto-Migration**: Tables are automatically created/updated on application startup
 - **Type Safety**: Go structs define database schema with struct tags
 - **No Manual SQL**: Schema changes are managed through Go code
-- **PostgreSQL Arrays**: Native support for text[] columns
+- **PostgreSQL Arrays**: Native support via `pq.StringArray` (github.com/lib/pq)
+- **Storage Struct**: New unified `Storage` struct with GORM-based client operations
+- **Auto-Seeding**: Development OAuth client automatically created via `SeedDevClient()`
 
 ## 🔄 Data Flow
 
 ### Authorization Flow
 ```
 Client → /authorize (API INPUT)
-       → Validate client_id (DB: client_repo)
+       → Validate client_id (DB: Storage.GetClientByID via client_registry)
        → Redirect to Google OAuth (GOOGLE INTERACTION)
        → Google callback with code (GOOGLE OUTPUT)
        → Exchange code with Google (GOOGLE INTERACTION)
@@ -94,6 +98,7 @@ Client → /authorize (API INPUT)
 ### Token Exchange Flow
 ```
 Client → /token (API INPUT)
+       → Validate client (DB: Storage.GetClientByID)
        → Validate auth code (MEMORY: authcode_service)
        → Create/update user (DB: user_repo OUTPUT)
        → Generate JWT tokens (security/jwt)
@@ -135,9 +140,11 @@ Microservice → /introspect (API INPUT)
 ### 4. **Database Design**
 - PostgreSQL for relational data
 - GORM ORM for schema management and migrations
-- Array types for redirect_uris and grant_types
+- **Storage struct**: Unified GORM-based repository for OAuth clients
+- Array types: `pq.StringArray` for redirect_uris and grant_types
 - Indexes on frequently queried columns (defined via GORM tags)
 - Automatic timestamps (created_at, updated_at)
+- **Auto-seeding**: Development client created on startup via `SeedDevClient()`
 
 ### 5. **Security Approach**
 - HMAC-SHA256 for JWT signing (symmetric)

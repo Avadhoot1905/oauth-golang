@@ -7,25 +7,25 @@ import (
 // ClientRegistry manages OAuth clients
 // DB INTERACTION: Retrieves client information from database
 type ClientRegistry struct {
-	clientRepo *storage.ClientRepository
+	storage *storage.Storage
 }
 
-func NewClientRegistry(clientRepo *storage.ClientRepository) *ClientRegistry {
+func NewClientRegistry(storage *storage.Storage) *ClientRegistry {
 	return &ClientRegistry{
-		clientRepo: clientRepo,
+		storage: storage,
 	}
 }
 
 // GetClient retrieves a client by client ID
-// DB INTERACTION: Queries database via clientRepo
+// DB INTERACTION: Queries database via storage
 func (r *ClientRegistry) GetClient(clientID string) (*storage.OAuthClient, error) {
-	return r.clientRepo.GetClientByID(clientID)
+	return r.storage.GetClientByID(clientID)
 }
 
 // ValidateClient validates client credentials
 // DB INTERACTION: Queries database and validates credentials
 func (r *ClientRegistry) ValidateClient(clientID, clientSecret string) (*storage.OAuthClient, error) {
-	client, err := r.clientRepo.GetClientByID(clientID)
+	client, err := r.storage.GetClientByID(clientID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +40,4 @@ func (r *ClientRegistry) ValidateClient(clientID, clientSecret string) (*storage
 	}
 
 	return client, nil
-}
-
-// RegisterClient registers a new OAuth client
-// OUTPUT TO DB: Creates new client record
-func (r *ClientRegistry) RegisterClient(client *storage.OAuthClient) error {
-	return r.clientRepo.CreateClient(client)
 }

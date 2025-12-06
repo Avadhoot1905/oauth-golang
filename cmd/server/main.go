@@ -33,11 +33,11 @@ func main() {
 
 	// Initialize repositories (DB interaction layer)
 	userRepo := storage.NewUserRepository(sqlDB)
-	clientRepo := storage.NewClientRepository(sqlDB)
+	storageService := &storage.Storage{DB: storage.DB}
 	tokenRepo := storage.NewTokenRepository(sqlDB)
 
 	// Initialize HTTP router with all handlers (API input layer)
-	handler := router.NewRouter(cfg, userRepo, clientRepo, tokenRepo)
+	handler := router.NewRouter(cfg, userRepo, storageService, tokenRepo)
 
 	// Create HTTP server
 	srv := &http.Server{
